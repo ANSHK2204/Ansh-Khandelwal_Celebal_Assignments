@@ -1,0 +1,10 @@
+{
+    "documents": {
+        "about_insightrag.txt": {
+            "path": "./data\\about_insightrag.txt",
+            "chunk_count": 3,
+            "original_docs_count": 1
+        }
+    },
+    "config": {}
+}
