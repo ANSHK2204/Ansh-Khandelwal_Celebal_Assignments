@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Drive Wise - AI-powered automotive assistant that helps you understand car brochures with accurate, source-attributed answers.">
+    <meta name="keywords" content="car brochure, AI assistant, RAG, automotive, Drive Wise">
+    <meta name="author" content="Drive Wise">
+    <title>Drive Wise — Automotive RAG Assistant</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚗</text></svg>">
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="app-container">
+        
+        <!-- ═══════════ SIDEBAR ═══════════ -->
+        <aside class="sidebar" id="sidebar">
+            
+            <!-- Logo -->
+            <div class="sidebar-logo">
+                <div class="logo-container">
+                    <div class="logo-icon">🚗</div>
+                    <div class="logo-text">
+                        <h1>Drive Wise</h1>
+                        <p>RAG-Powered Assistant</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Vehicle Selection -->
+            <div class="sidebar-section">
+                <div class="section-label">
+                    <span class="icon">🏷️</span>
+                    Select Vehicle
+                </div>
+                <div class="select-wrapper">
+                    <select id="brand-select" aria-label="Select car brand">
+                        <option value="">Select Brand</option>
+                    </select>
+                </div>
+                <div class="select-wrapper">
+                    <select id="model-select" aria-label="Select car model" disabled>
+                        <option value="">Select Model</option>
+                    </select>
+                </div>
+                <button class="upload-btn" id="upload-btn" aria-label="Upload brochure">
+                    <span class="icon">📄</span>
+                    Upload Brochure PDF
+                </button>
+            </div>
+
+            <!-- System Stats -->
+            <div class="sidebar-stats">
+                <div class="section-label">
+                    <span class="icon">📊</span>
+                    System Status
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Documents</span>
+                    <span class="stat-value accent" id="stat-docs">0</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Queries</span>
+                    <span class="stat-value" id="stat-queries">0</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Avg Response</span>
+                    <span class="stat-value" id="stat-avg-time">—</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">LLM Status</span>
+                    <span class="stat-value accent" id="stat-gemini">Checking...</span>
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="sidebar-footer">
+                <div class="powered-badge">
+                    <div class="dot"></div>
+                    <span>Powered by RAG + Gemini AI</span>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Mobile Overlay -->
+        <div class="mobile-overlay" id="mobile-overlay"></div>
+
+        <!-- ═══════════ MAIN CHAT AREA ═══════════ -->
+        <main class="main-content">
+
+            <!-- Chat Header -->
+            <header class="chat-header">
+                <div class="header-info">
+                    <button class="mobile-toggle" id="mobile-toggle" aria-label="Toggle sidebar">☰</button>
+                    <div class="header-avatar">🚗</div>
+                    <div class="header-details">
+                        <h2 id="header-title">Drive Wise Assistant</h2>
+                        <div class="header-status" id="header-status">
+                            <div class="status-dot" id="status-dot"></div>
+                            <span>Select a vehicle to start</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="header-actions">
+                    <button class="header-btn" onclick="clearChat()" aria-label="Clear chat">
+                        🗑️ Clear
+                    </button>
+                </div>
+            </header>
+
+            <!-- Messages Area -->
+            <div class="messages-area" id="messages-area">
+
+                <!-- Welcome Message -->
+                <div class="welcome-message">
+                    <div class="welcome-icon">🚗</div>
+                    <h2>Welcome to Drive Wise</h2>
+                    <p>
+                        Your AI-powered automotive assistant. Select a car brand and model, 
+                        then ask any question about the vehicle — from engine specs to safety features.
+                        Answers are grounded in official brochure data with full source attribution.
+                    </p>
+                    <div class="welcome-suggestions">
+                        <button class="suggestion-chip">What is the mileage?</button>
+                        <button class="suggestion-chip">Tell me about safety features</button>
+                        <button class="suggestion-chip">Engine specifications</button>
+                        <button class="suggestion-chip">Interior features</button>
+                        <button class="suggestion-chip">Boot space and dimensions</button>
+                        <button class="suggestion-chip">Warranty details</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Input Area -->
+            <div class="input-area">
+                <div class="input-container">
+                    <div class="input-wrapper">
+                        <textarea 
+                            id="chat-input" 
+                            placeholder="Ask about the car brochure..."
+                            rows="1"
+                            aria-label="Type your message"
+                        ></textarea>
+                        <span class="char-count" id="char-count"></span>
+                    </div>
+                    <button class="send-btn" id="send-btn" aria-label="Send message">
+                        ➤
+                    </button>
+                </div>
+                <div class="input-hint">
+                    Press <kbd>Enter</kbd> to send, <kbd>Shift+Enter</kbd> for new line
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- ═══════════ UPLOAD MODAL ═══════════ -->
+    <div class="modal-overlay" id="upload-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>📄 Upload Car Brochure</h3>
+                <button class="modal-close" id="modal-close" aria-label="Close modal">✕</button>
+            </div>
+            <form class="modal-form" id="upload-form">
+                <div class="form-group">
+                    <label for="upload-brand">Car Brand</label>
+                    <input type="text" id="upload-brand" placeholder="e.g., Hyundai" required>
+                </div>
+                <div class="form-group">
+                    <label for="upload-model">Car Model</label>
+                    <input type="text" id="upload-model" placeholder="e.g., Creta" required>
+                </div>
+                <div class="form-group">
+                    <label for="upload-version">Document Version</label>
+                    <input type="text" id="upload-version" placeholder="e.g., 2024" value="2024">
+                </div>
+                <div class="form-group">
+                    <label>Brochure PDF</label>
+                    <div class="file-drop-zone" id="file-drop-zone">
+                        <div class="icon">📁</div>
+                        <p>Drop PDF here or click to browse</p>
+                        <div class="file-name" id="file-name"></div>
+                    </div>
+                    <input type="file" id="file-input" accept=".pdf" style="display: none;">
+                </div>
+                <div class="upload-progress">
+                    <div class="progress-bar">
+                        <div class="progress-fill"></div>
+                    </div>
+                    <div class="progress-text">Uploading...</div>
+                </div>
+                <button type="submit" class="modal-submit">
+                    Upload & Process
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- ═══════════ SCRIPTS ═══════════ -->
+    <script src="/static/script.js"></script>
+    <script>
+        // Enable model select when brand is selected
+        document.getElementById('brand-select').addEventListener('change', function() {
+            const modelSelect = document.getElementById('model-select');
+            modelSelect.disabled = !this.value;
+        });
+
+        // Clear chat function
+        function clearChat() {
+            const messagesArea = document.getElementById('messages-area');
+            messagesArea.innerHTML = `
+                <div class="welcome-message">
+                    <div class="welcome-icon">🚗</div>
+                    <h2>Welcome to Drive Wise</h2>
+                    <p>
+                        Your AI-powered automotive assistant. Select a car brand and model, 
+                        then ask any question about the vehicle — from engine specs to safety features.
+                        Answers are grounded in official brochure data with full source attribution.
+                    </p>
+                    <div class="welcome-suggestions">
+                        <button class="suggestion-chip">What is the mileage?</button>
+                        <button class="suggestion-chip">Tell me about safety features</button>
+                        <button class="suggestion-chip">Engine specifications</button>
+                        <button class="suggestion-chip">Interior features</button>
+                        <button class="suggestion-chip">Boot space and dimensions</button>
+                        <button class="suggestion-chip">Warranty details</button>
+                    </div>
+                </div>
+            `;
+        }
+    </script>
+</body>
+</html>
